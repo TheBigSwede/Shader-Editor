@@ -2,6 +2,9 @@ uniform sampler2D noise;
 uniform float u_time;
 uniform vec2 resolution;
 
+float PI = 3.1415;
+float e = 2.71828182846;
+
 float rand(float st) {
     st = floor(st);
     vec2 co = vec2(floor(st * .3241), fract(st * .3241));
@@ -75,9 +78,9 @@ float simplex_noise_oct(vec2 p, int octaves) {
             tex_rand(float(i)),
             tex_rand(float(i+1))
             );
-        value += simplex_noise((p + random_offset) * float(i + 1)) / float(i + 1);
+        value += simplex_noise((2.5*p + random_offset) * float(i + 1)) / float(i + 1);
     }
-    return 0.25*value;
+    return 0.075*value;
 }
 
 
@@ -108,38 +111,60 @@ float multifloor(float x, float levels) {
     return floor(levels * x)/levels;
 }
 
-float star(vec2 p, vec2 center) {
+float fast_exp(float x) {
+    //x = clamp(x,-1.,1.);
+    //return pow(1. - 2.*x*x + x*x*x*x,2.);
+    return exp(-x*x);
+}
+
+float angular(vec2 r, float a, float b, float n) {
+    float angle = atan(r.y,r.x);
+    return pow((1.+b*sin(n*angle-.5*PI)),a);
+}
+
+float star(vec2 p, vec2 center, float time, int points) {
     vec2 r = p-center;
-    return .0001 / pow(1.05+sin(4.*(atan(r.y,r.x)+u_time)),0.4) / pow(length(p-center), 2.);
+    float R = length(r);
+    vec2 offset = vec2(0.01*(1.+sin(time-PI/3.)),0.0);
+    float s = sin(PI/2.*float(points));
+    float c = cos(PI/2.*float(points));
+    mat2 rotation = mat2(s,c,-c,s);
+
+/*     float radial = 100.*(sin(time)+1.)*pow(e,-1000.*(R-.1*sin(time))*(R-.1*sin(time))) + (sin(time+PI*0.7)+1.)/pow(R,1.5);
+    float angular = 1./pow(1.001+sin(4.*(atan(r.y,r.x))-.5*PI),0.4);
+
+    return 0.0001*radial*angular; */
+
+    float result = pow((1.+sin(time+2.*PI/4.)),2.0)*fast_exp(250.*R);
+
+/*     for (int i=0; i<points; i++) {
+        
+        result += pow((0.5*sin(time-PI/3.)+1.),3.)*fast_exp(200.*length(r-offset));
+        offset = rotation * offset;
+    } */
+
+    float angular = angular(r,-10.*pow((1.+sin(time-0.05*PI))/2.,5.),0.5,4.);
+
+    return pow(atan(angular*result),2.5);
+
+    //return pow(sin(time),2.)*.0001 / pow(1.05+sin(4.*(atan(r.y,r.x))-.5*PI),0.4) / pow(length(r), 2.);
 }
 
 vec3 random_points(vec2 coord) {
 
-    //vec2 fragcoord = (gl_FragCoord.xy - resolution * 0.5) / (0.5 * resolution.x);
-    vec2 fragcoord = gl_FragCoord.xy/resolution.y;
-
-    vec2 scale = vec2(4,2.0);
-    vec2 offset = vec2(-0.5,-1.5);
-
-    fragcoord = scale*fragcoord-offset;
-
 
     int num_points = 50;
-    vec2 seed = vec2(0.31414313,0.1234123412312);
+    vec2 seed = vec2(0.3149914313,0.1234123412312);
 
     vec3 color = vec3(0.0);
 
+    vec2 range = vec2(1.0,0.3);
+
     for (int i=0; i<num_points; i++){
-        vec2 random_point = offset+scale*tex_rand_twoD(seed+vec2(.2345*float(i),0.0)).rg;
-        float time_offset = 6.28*tex_rand(seed.x+seed.y+.986*float(i));
-        color += vec3(1.0,1.0,1.0)*pow(sin(u_time+time_offset),2.)*star(coord,random_point);
+        vec2 random_point = range*tex_rand_twoD(seed+vec2(.2345*float(i),0.0)).rg;
+        float time_offset = u_time+6.28*tex_rand(seed.x+seed.y+.986*float(i));        
+        color += vec3(1.0,1.0,1.0)*star(coord,random_point,time_offset,4);
     }
-
-    //color = tex_rand_twoD(fragcoord).rgb;
-
-
-
-    gl_FragColor = vec4(color,1.0);
 
     return color;
 
@@ -147,14 +172,9 @@ vec3 random_points(vec2 coord) {
 
 void main() {
     //vec2 fragcoord = (gl_FragCoord.xy - resolution * 0.5) / (0.5 * resolution.x);
-    vec2 fragcoord = gl_FragCoord.xy/resolution.y;
+    vec2 fragcoord = gl_FragCoord.xy/resolution.xy;
 
-    vec2 scale = vec2(3.0,5.0);
-    vec2 offset = vec2(0.0,1.5);
-
-    fragcoord = scale*fragcoord-offset;
-
-    vec3 colorA = vec3(0.35f, 0.16f, 0.64f);
+    vec3 colorA = vec3(0.25f, 0.09f, 0.5f);
     vec3 colorB = vec3(0.83f, 0.37f, 0.64f);
     vec3 colorC = vec3(0.99f, 0.47f, 0.51f);
     vec3 colorD = vec3(0.98f, 0.64f, 0.56f);
@@ -163,21 +183,22 @@ void main() {
     vec3 color;
 
 
-    vec2 time_offset = vec2(-0.1*u_time,-0.01*u_time);
-    vec2 sample_coord = vec2(fragcoord.x,0.0)-time_offset;
-    if (fragcoord.y < simplex_noise_oct(sample_coord,10)){
+    vec2 time_offset = vec2(-0.05*u_time,-0.01*u_time);
+    vec2 sample_coord = vec2(fragcoord.x,0.0);
+    if (fragcoord.y < simplex_noise_oct(sample_coord-time_offset,10)+0.25){
         color = colorA + random_points(fragcoord);
-    } else if (fragcoord.y < simplex_noise_oct(sample_coord+vec2(1231.,0.341234),10)+1.0) {
+    } else if (fragcoord.y < simplex_noise_oct(sample_coord+time_offset+vec2(1231.,0.341234),10)+0.45) {
         color = colorB;
-    } else if (fragcoord.y < simplex_noise_oct(sample_coord+vec2(9873.,0.23215234),10)+2.0) {
+    } else if (fragcoord.y < simplex_noise_oct(sample_coord-time_offset+vec2(9873.,0.23215234),10)+0.65) {
         color = colorC;
-    } else if (fragcoord.y < simplex_noise_oct(sample_coord+vec2(328.,0.3214235),10)+3.0) {
+    } else if (fragcoord.y < simplex_noise_oct(sample_coord+time_offset+vec2(328.,0.3214235),10)+0.85) {
         color = colorD;
     } else {
         color = colorE;
     }
-    //float pct = fragcoord.y + 0.3 * simplex_noise_oct((time_offset + sample_coord)*3.,20);
-    //vec3 color = mix(colorB,colorA,pct);
+
+    //color = random_points(fragcoord);
+
 
     gl_FragColor = vec4(color, 1.0);
 }
