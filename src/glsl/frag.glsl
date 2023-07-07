@@ -153,7 +153,7 @@ float star(vec2 p, vec2 center, float time, int points) {
 vec3 random_points(vec2 coord) {
 
 
-    int num_points = 50;
+    int num_points = 30;
     vec2 seed = vec2(0.3149914313,0.1234123412312);
 
     vec3 color = vec3(0.0);
@@ -174,11 +174,11 @@ void main() {
     //vec2 fragcoord = (gl_FragCoord.xy - resolution * 0.5) / (0.5 * resolution.x);
     vec2 fragcoord = gl_FragCoord.xy/resolution.xy;
 
-    vec3 colorA = vec3(0.25f, 0.09f, 0.5f);
-    vec3 colorB = vec3(0.83f, 0.37f, 0.64f);
+    vec3 colorA = vec3(0.32f, 0.1f, 0.53f);
+    vec3 colorB = vec3(0.84f, 0.33f, 0.63f);
     vec3 colorC = vec3(0.99f, 0.47f, 0.51f);
-    vec3 colorD = vec3(0.98f, 0.64f, 0.56f);
-    vec3 colorE = vec3(1.00f, 0.91f, 0.59f);
+    vec3 colorD = vec3(1.0f, 0.63f, 0.54f);
+    vec3 colorE = vec3(1.0f, 0.9f, 0.63f);
 
     vec3 color;
 
