@@ -170,10 +170,7 @@ vec3 random_points(vec2 coord) {
 
 }
 
-void main() {
-    //vec2 fragcoord = (gl_FragCoord.xy - resolution * 0.5) / (0.5 * resolution.x);
-    vec2 fragcoord = gl_FragCoord.xy/resolution.xy;
-
+vec3 nasa_gradient(vec2 fragcoord) {
     vec3 colorA = vec3(0.32f, 0.1f, 0.53f);
     vec3 colorB = vec3(0.84f, 0.33f, 0.63f);
     vec3 colorC = vec3(0.99f, 0.47f, 0.51f);
@@ -197,7 +194,21 @@ void main() {
         color = colorE;
     }
 
-    //color = random_points(fragcoord);
+    return color;
+}
+
+void main() {
+    //vec2 fragcoord = (gl_FragCoord.xy - resolution * 0.5) / (0.5 * resolution.x);
+    vec2 fragcoord = gl_FragCoord.xy/resolution.xy;
+    int samples = 10;
+    vec3 color = vec3(0.0);
+
+    for (int i; i<samples; i++) {
+        vec2 coord = fragcoord+tex_rand_twoD(fragcoord*float(i)).xy/resolution.xy;
+        color += nasa_gradient(coord);
+    }
+
+    color /= float(samples);
 
 
     gl_FragColor = vec4(color, 1.0);

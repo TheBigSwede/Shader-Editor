@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { KeyboardState } from './KeyHandler';
+
 
 import fragment from '/src/glsl/frag.glsl';
 import vertex from '/src/glsl/vert.glsl';
@@ -13,7 +15,7 @@ noise.magFilter = THREE.NearestFilter;
 const scene = new THREE.Scene();
 const camera = new THREE.OrthographicCamera(- 1, 1, 1, - 1, -1, 1);
 
-const renderer = new THREE.WebGLRenderer();
+const renderer = new THREE.WebGLRenderer({ antialias: true });
 renderer.setSize(512, 512);
 document.body.appendChild(renderer.domElement);
 
@@ -27,7 +29,7 @@ let uniforms = {
         type: 'f',
         value: clock.getElapsedTime(),
     },
-    resolution: { 
+    resolution: {
         value: renderer.getSize(new THREE.Vector2()),
     },
 }
@@ -48,7 +50,21 @@ const geometry = new THREE.PlaneGeometry(2, 2);
 const fullscreen_plane = new THREE.Mesh(geometry, shaderMaterial);
 scene.add(fullscreen_plane);
 
+// Enable keyboard input
 
+function handleKeyPress(event) {
+    console.log("Key pressed:", event.key);
+    if (event.key === 'p') {
+        getImageData = true;
+    }
+}
+
+// Add an event listener to the document that listens for the 'keypress' event
+document.addEventListener("keypress", handleKeyPress);
+
+
+var getImageData;
+var imgData;
 
 
 
@@ -56,56 +72,19 @@ function animate() {
     requestAnimationFrame(animate);
     uniforms.u_time.value = clock.getElapsedTime();
     renderer.render(scene, camera);
+    if (getImageData == true) {
+        imgData = renderer.domElement.toDataURL();
+        const link = document.createElement('a');
+        link.href = imgData;
+        link.download = 'screenshot.png';
+        link.click();
+        getImageData = false;
+    }
 }
 animate();
 
 
 
-
-
-/* async function loadShaders(frag_path, vert_path) {
-
-    // Create a FileLoader instance
-    var loader = new THREE.FileLoader();
-
-    // Load the vertex shader file
-    await loader.load(
-        vert_path,  // URL of the vertex shader file
-        function (vertexShaderSource) {
-
-            // Load the fragment shader file
-            loader.load(
-                frag_path,  // URL of the fragment shader file
-                function (fragmentShaderSource) {
-
-
-
-                    // ...
-                },
-                function (xhr) {
-                    // Progress callback for fragment shader
-                    console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-                },
-                function (error) {
-                    // Error callback for fragment shader
-                    console.error('Failed to load fragment shader:', error);
-                }
-            );
-        },
-        function (xhr) {
-            // Progress callback for vertex shader
-            console.log((xhr.loaded / xhr.total * 100) + '% loaded');
-        },
-        function (error) {
-            // Error callback for vertex shader
-            console.error('Failed to load vertex shader:', error);
-        }
-    );
-
-
-}
-
-loadShaders('shaders/frag.glsl', 'shaders/vertex.glsl'); */
 
 
 
